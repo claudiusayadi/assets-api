@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, statSync } from 'fs';
 import { join } from 'path';
 import sharp from 'sharp';
 
@@ -44,12 +44,23 @@ app.post('/upload', async c => {
 
 // Serve static files from /assets
 app.get('/*', async c => {
-	const path = c.req.path.slice(1); // Remove leading "/"
-	const filePath = join(assetsDir, path);
+	const path = c.req.path.slice(1);
+	if (!path) {
+		return c.json(
+			{ message: 'Assets API: Use POST /upload to upload files' },
+			200
+		);
+	}
 
+	const filePath = join(assetsDir, path);
 	if (existsSync(filePath)) {
-		const file = Bun.file(filePath);
-		return new Response(file);
+		const stats = statSync(filePath);
+		if (stats.isFile()) {
+			const file = Bun.file(filePath);
+			return new Response(file);
+		} else {
+			return c.json({ error: 'Path is a directory, not a file' }, 400);
+		}
 	}
 	return c.json({ error: 'File not found' }, 404);
 });
