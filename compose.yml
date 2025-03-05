@@ -1,0 +1,16 @@
+name: assets-api
+services:
+  assets-api:
+    container_name: assets-api
+    build: .
+    volumes:
+      - ./assets:/assets
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.assets-api.rule=Host(`assets.dovely.tech`)'
+      - 'traefik.http.routers.assets-api.entrypoints=live'
+      - 'traefik.http.routers.assets-api.tls=true'
+      - 'traefik.http.services.assets-api.loadbalancer.server.port=3000'
+    restart: unless-stopped
+    networks:
+      - proxy
