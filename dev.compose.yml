@@ -1,0 +1,10 @@
+name: assets-api
+services:
+  assets-api:
+    container_name: assets-api
+    image: ghcr.io/claudiusayadi/assets-api:latest
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    volumes:
+      - ./assets:/assets

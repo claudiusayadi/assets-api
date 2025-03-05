@@ -34,3 +34,15 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository }}:latest
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.KEY }}
+          script: |
+            docker pull ghcr.io/${{ github.repository }}:latest
+            docker stop assets-api
+            docker rm assets-api
+            docker run -d --name assets-api -v /assets:/assets -p 3000:3000 ghcr.io/${{ github.repository }}:latest
