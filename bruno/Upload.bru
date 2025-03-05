@@ -5,7 +5,15 @@ meta {
 }
 
 post {
-  url: 
-  body: none
+  url: http://localhost:3000/upload?folder=onclouds
+  body: multipartForm
   auth: none
+}
+
+params:query {
+  folder: onclouds
+}
+
+body:multipart-form {
+  file: @file(/home/dovely/Pictures/claudius_ayadi.jpg)
 }
