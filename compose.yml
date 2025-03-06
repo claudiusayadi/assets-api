@@ -5,12 +5,17 @@ services:
     image: ghcr.io/claudiusayadi/assets-api:latest
     restart: unless-stopped
     volumes:
-      - ./assets:/assets
+      - ~/docker/appdata/assets-api/assets:/assets
     labels:
-      - 'traefik.enable=true'
-      - 'traefik.http.routers.assets-api.rule=Host(`assets.dovely.tech`)'
-      - 'traefik.http.routers.assets-api.entrypoints=live'
-      - 'traefik.http.routers.assets-api.tls=true'
-      - 'traefik.http.services.assets-api.loadbalancer.server.port=3000'
+      - traefik.enable=true
+      - traefik.http.routers.assets-api.rule=Host(`assets.dovely.tech`)
+      - traefik.http.routers.assets-api.tls=true
+      - traefik.http.routers.assets-api.entrypoints=live
+      - traefik.http.routers.assets-api.tls.certresolver=myresolver
+      - traefik.http.services.assets-api.loadbalancer.server.port=3000
     networks:
       - proxy
+
+networks:
+  proxy:
+    external: true

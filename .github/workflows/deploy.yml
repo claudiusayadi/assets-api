@@ -42,7 +42,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.KEY }}
           script: |
-            docker pull ghcr.io/${{ github.repository }}:latest
-            docker stop assets-api
-            docker rm assets-api
-            docker run -d --name assets-api -v /assets:/assets -p 3000:3000 ghcr.io/${{ github.repository }}:latest
+            cd /home/dovely/
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
