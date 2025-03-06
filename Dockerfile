@@ -13,8 +13,8 @@ COPY src ./src
 FROM oven/bun:alpine
 WORKDIR /app
 
-# Install only the minimal dependencies for libvips
-RUN apk add --no-cache libvips-cpp
+# Install only the minimal dependencies for vips
+RUN apk add --no-cache vips
 
 # Copy only runtime dependencies and app
 COPY --from=builder /app/node_modules ./node_modules
