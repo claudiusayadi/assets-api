@@ -24,32 +24,43 @@ if (!existsSync(assetsDir)) {
 // POST => /upload?folder=example
 app.post('/upload', async c => {
 	const body = await c.req.parseBody();
-	const file = body['file'];
-	if (!file || !(file instanceof File)) {
-		return c.json({ error: 'No file uploaded' }, 400);
+	const files = body['files'];
+
+	if (!files) {
+		return c.json({ error: 'No files uploaded' }, 400);
+	}
+
+	const fileArray = Array.isArray(files) ? files : [files];
+	if (
+		fileArray.length === 0 ||
+		!fileArray.every(file => file instanceof File)
+	) {
+		return c.json({ error: 'Invalid file input' }, 400);
 	}
 
 	const folderName = c.req.query('folder') || 'default';
-	const fileName = file.name;
 	const folderPath = join(assetsDir, folderName);
 
 	if (!existsSync(folderPath)) {
 		mkdirSync(folderPath, { recursive: true });
 	}
 
-	const filePath = join(folderPath, fileName.replace(/\.[^/.]+$/, '.webp'));
-	const buffer = await file.arrayBuffer();
+	const fileUrls = await Promise.all(
+		fileArray.map(async file => {
+			const fileName = file.name;
+			const filePath = join(folderPath, fileName.replace(/\.[^/.]+$/, '.webp'));
+			const buffer = await file.arrayBuffer();
 
-	await sharp(buffer)
-		.resize({ width: 1920, withoutEnlargement: true })
-		.webp({ quality: 80 })
-		.toFile(filePath);
+			await sharp(buffer)
+				.resize({ width: 1920, withoutEnlargement: true })
+				.webp({ quality: 80 })
+				.toFile(filePath);
 
-	const fileUrl = `${url}/${folderName}/${fileName.replace(
-		/\.[^/.]+$/,
-		'.webp'
-	)}`;
-	return c.json({ url: fileUrl }, 201);
+			return `${url}/${folderName}/${fileName.replace(/\.[^/.]+$/, '.webp')}`;
+		})
+	);
+
+	return c.json({ urls: fileUrls }, 201);
 });
 
 // Serve static files from /assets
