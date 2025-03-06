@@ -62,7 +62,6 @@ app.post('/upload', async c => {
 
 app.get('/*', async c => {
 	const path = c.req.path.slice(1);
-	const folderName = c.req.query('folder');
 	const json = c.req.query('json') === 'true';
 
 	// Root path
@@ -75,30 +74,23 @@ app.get('/*', async c => {
 			200
 		);
 
-	// GET => /example - list folder files
-	if (folderName) {
-		const folderPath = join(assetsDir, folderName);
-		if (existsSync(folderPath) && statSync(folderPath).isDirectory()) {
-			const files = readdirSync(folderPath).filter(file =>
-				statSync(join(folderPath, file)).isFile()
-			);
-			const fileUrls = files.map(file => `${url}/${folderName}/${file}`);
-			return c.json({ files: fileUrls }, 200);
-		}
-		return c.json({ error: 'Folder not found' }, 404);
-	}
-
 	// GET => /example/file.webp{or svg}(?json=true) - serve file/return file url
 	const filePath = join(assetsDir, path);
 	if (existsSync(filePath)) {
 		const stats = statSync(filePath);
-		if (stats.isFile()) {
-			if (json) return c.json({ url: `${url}/${path}` }, 200);
-
+		if (stats.isDirectory()) {
+			// Treat as folder and list files
+			const files = readdirSync(filePath).filter(file =>
+				statSync(join(filePath, file)).isFile()
+			);
+			const fileUrls = files.map(file => `${url}/${path}/${file}`);
+			return c.json({ files: fileUrls }, 200);
+		} else if (stats.isFile()) {
+			if (json) {
+				return c.json({ url: `${url}/${path}` }, 200);
+			}
 			const file = Bun.file(filePath);
 			return new Response(file);
-		} else {
-			return c.json({ error: 'Path is a directory, not a file' }, 400);
 		}
 	}
 	return c.json({ error: 'File not found' }, 404);
