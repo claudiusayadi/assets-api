@@ -2,8 +2,18 @@ import { Hono } from 'hono';
 import { existsSync, mkdirSync, statSync } from 'fs';
 import { join } from 'path';
 import sharp from 'sharp';
+import { cors } from 'hono/cors';
 
 const app = new Hono();
+app.use(
+	cors({
+		origin: '*',
+		credentials: true,
+		allowHeaders: ['Content-Type'],
+		allowMethods: ['GET', 'POST', 'DELETE'],
+	})
+);
+
 const url = 'https://assets.dovely.tech';
 
 const assetsDir = '/app/assets';
