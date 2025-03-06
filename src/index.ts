@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { existsSync, mkdirSync, statSync } from 'fs';
+import { existsSync, mkdirSync, statSync, readdirSync } from 'fs';
 import { join } from 'path';
 import sharp from 'sharp';
 import { cors } from 'hono/cors';
@@ -71,13 +71,33 @@ app.post('/upload', async c => {
 
 app.get('/*', async c => {
 	const path = c.req.path.slice(1);
+	const folderName = c.req.query('folder');
+
+	// return [urls] with ?folder=example
+	if (folderName) {
+		const folderPath = join(assetsDir, folderName);
+		if (existsSync(folderPath) && statSync(folderPath).isDirectory()) {
+			const files = readdirSync(folderPath).filter(file =>
+				statSync(join(folderPath, file)).isFile()
+			);
+			const fileUrls = files.map(file => `${url}/${folderName}/${file}`);
+			return c.json({ files: fileUrls }, 200);
+		}
+		return c.json({ error: 'Folder not found' }, 404);
+	}
+
+	// Handle root path
 	if (!path) {
 		return c.json(
-			{ message: 'Assets API: Use POST /upload to upload files' },
+			{
+				message:
+					'Assets API: Use POST /upload to upload files or ?folder= to list files',
+			},
 			200
 		);
 	}
 
+	// Handle direct file serving
 	const filePath = join(assetsDir, path);
 	if (existsSync(filePath)) {
 		const stats = statSync(filePath);
