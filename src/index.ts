@@ -15,13 +15,11 @@ app.use(
 );
 
 const url = 'https://assets.dovely.tech';
-
 const assetsDir = '/app/assets';
 if (!existsSync(assetsDir)) {
 	mkdirSync(assetsDir, { recursive: true });
 }
 
-// POST => /upload?folder=example
 app.post('/upload', async c => {
 	const body = await c.req.parseBody();
 	const files = body['files'];
@@ -48,22 +46,29 @@ app.post('/upload', async c => {
 	const fileUrls = await Promise.all(
 		fileArray.map(async file => {
 			const fileName = file.name;
-			const filePath = join(folderPath, fileName.replace(/\.[^/.]+$/, '.webp'));
+			const isSvg = fileName.toLowerCase().endsWith('.svg');
+			const outputFileName = isSvg
+				? fileName
+				: fileName.replace(/\.[^/.]+$/, '.webp');
+			const filePath = join(folderPath, outputFileName);
 			const buffer = await file.arrayBuffer();
 
-			await sharp(buffer)
-				.resize({ width: 1920, withoutEnlargement: true })
-				.webp({ quality: 80 })
-				.toFile(filePath);
+			if (isSvg) {
+				await Bun.write(filePath, buffer);
+			} else {
+				await sharp(buffer)
+					.resize({ width: 1920, withoutEnlargement: true })
+					.webp({ quality: 80 })
+					.toFile(filePath);
+			}
 
-			return `${url}/${folderName}/${fileName.replace(/\.[^/.]+$/, '.webp')}`;
+			return `${url}/${folderName}/${outputFileName}`;
 		})
 	);
 
 	return c.json({ urls: fileUrls }, 201);
 });
 
-// Serve static files from /assets
 app.get('/*', async c => {
 	const path = c.req.path.slice(1);
 	if (!path) {
