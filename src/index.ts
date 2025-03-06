@@ -85,7 +85,7 @@ app.get('/*', async c => {
 		const files = readdirSync(filepath).filter(file =>
 			statSync(join(filepath, file)).isFile()
 		);
-		const fileUrls = files.map(file => `${url}/${path}/${file}`);
+		const fileUrls = files.map(file => `${url}/${path}${file}`);
 		return c.json({ files: fileUrls }, 200);
 	}
 
