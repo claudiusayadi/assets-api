@@ -16,32 +16,23 @@ app.use(
 
 const url = 'https://assets.dovely.tech';
 const assetsDir = '/app/assets';
-if (!existsSync(assetsDir)) {
-	mkdirSync(assetsDir, { recursive: true });
-}
+
+if (!existsSync(assetsDir)) mkdirSync(assetsDir, { recursive: true });
 
 app.post('/upload', async c => {
 	const body = await c.req.parseBody();
 	const files = body['files'];
 
-	if (!files) {
-		return c.json({ error: 'No files uploaded' }, 400);
-	}
+	if (!files) return c.json({ error: 'No files uploaded' }, 400);
 
 	const fileArray = Array.isArray(files) ? files : [files];
-	if (
-		fileArray.length === 0 ||
-		!fileArray.every(file => file instanceof File)
-	) {
+	if (fileArray.length === 0 || !fileArray.every(file => file instanceof File))
 		return c.json({ error: 'Invalid file input' }, 400);
-	}
 
 	const folderName = c.req.query('folder') || 'default';
 	const folderPath = join(assetsDir, folderName);
 
-	if (!existsSync(folderPath)) {
-		mkdirSync(folderPath, { recursive: true });
-	}
+	if (!existsSync(folderPath)) mkdirSync(folderPath, { recursive: true });
 
 	const fileUrls = await Promise.all(
 		fileArray.map(async file => {
@@ -72,9 +63,10 @@ app.post('/upload', async c => {
 app.get('/*', async c => {
 	const path = c.req.path.slice(1);
 	const folderName = c.req.query('folder');
+	const json = c.req.query('json') === 'true';
 
 	// Root path
-	if (!path) {
+	if (!path)
 		return c.json(
 			{
 				message:
@@ -82,9 +74,8 @@ app.get('/*', async c => {
 			},
 			200
 		);
-	}
 
-	// return [urls] with ?folder=example
+	// GET => /example - list folder files
 	if (folderName) {
 		const folderPath = join(assetsDir, folderName);
 		if (existsSync(folderPath) && statSync(folderPath).isDirectory()) {
@@ -97,11 +88,13 @@ app.get('/*', async c => {
 		return c.json({ error: 'Folder not found' }, 404);
 	}
 
-	//  Direct file serving
+	// GET => /example/file.webp{or svg}(?json=true) - serve file/return file url
 	const filePath = join(assetsDir, path);
 	if (existsSync(filePath)) {
 		const stats = statSync(filePath);
 		if (stats.isFile()) {
+			if (json) return c.json({ url: `${url}/${path}` }, 200);
+
 			const file = Bun.file(filePath);
 			return new Response(file);
 		} else {
