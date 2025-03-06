@@ -73,6 +73,17 @@ app.get('/*', async c => {
 	const path = c.req.path.slice(1);
 	const folderName = c.req.query('folder');
 
+	// Root path
+	if (!path) {
+		return c.json(
+			{
+				message:
+					'Assets API: Use POST /upload to upload files or ?folder= to list files',
+			},
+			200
+		);
+	}
+
 	// return [urls] with ?folder=example
 	if (folderName) {
 		const folderPath = join(assetsDir, folderName);
@@ -86,18 +97,7 @@ app.get('/*', async c => {
 		return c.json({ error: 'Folder not found' }, 404);
 	}
 
-	// Handle root path
-	if (!path) {
-		return c.json(
-			{
-				message:
-					'Assets API: Use POST /upload to upload files or ?folder= to list files',
-			},
-			200
-		);
-	}
-
-	// Handle direct file serving
+	//  Direct file serving
 	const filePath = join(assetsDir, path);
 	if (existsSync(filePath)) {
 		const stats = statSync(filePath);
